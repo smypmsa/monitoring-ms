@@ -1,0 +1,21 @@
+# Python
+*.pyc
+__pycache__/
+
+# Virtual environments
+.venv/
+
+# Logs
+*.log
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Secrets
+**/secrets/*.json
+**/config/*.json
+
+# System files
+.DS_Store
+.env

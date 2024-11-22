@@ -1,0 +1,8 @@
+# Ignore Python bytecode and logs
+*.pyc
+__pycache__/
+*.log
+
+# Ignore config and secrets
+app/config/endpoints.json
+app/secrets/secrets.json
