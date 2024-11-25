@@ -7,76 +7,66 @@ from contextlib import asynccontextmanager
 
 from common.config_loader import ConfigLoader
 from common.factory import MetricFactory
+from common.metric_base import BaseMetric
+
 import app.metrics.block_latency
-#import app.metrics.http_call_latency
+import app.metrics.http_call_latency
 
 
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 CONFIG_PATH = "app/config/endpoints.json"
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Manages application lifespan:
-    - Starts metrics collection tasks on startup
-    - Cancels tasks on shutdown
-    """
-    logging.debug("Starting metrics collection tasks...")
-    task = asyncio.create_task(main())
-    yield  # Execution pauses here until app shutdown
-    task.cancel()  # Ensure graceful shutdown of background tasks
-
-app = FastAPI(lifespan=lifespan)
-
-# Store live metrics in a coroutine-safe list for dynamic exposure
-metrics_output = []
-
-@app.get("/metrics", response_class=PlainTextResponse)
-async def get_metrics():
-    """
-    Expose Prometheus-compatible metrics dynamically.
-    """
-    logging.debug(f"Metrics endpoint called. Current metrics: {metrics_output}")
-    return "\n".join(metrics_output)
-
-async def collect_metrics(provider):
-    """
-    Continuously collect metrics for a single provider.
-    Append the latest metrics to the global metrics_output.
-    """
-    metric = MetricFactory.create(
+async def collect_metrics(provider, timeout, interval):
+    """Collect metrics for both WebSocket and HTTP endpoints."""
+    logging.debug(f"Starting metrics collection for provider: {provider['name']}")
+    
+    metrics = MetricFactory.create_metrics(
         blockchain_name=provider["blockchain"],
-        websocket_endpoint=provider.get("websocket_endpoint"),
-        http_endpoint=provider.get("http_endpoint"),
         provider=provider["name"],
-        timeout=provider.get("timeout", 15),
-        interval=provider.get("interval", 60)
+        timeout=timeout,
+        interval=interval,
+        ws_endpoint=provider.get("websocket_endpoint"),
+        http_endpoint=provider.get("http_endpoint")
     )
 
-    while True:
-        try:
-            result = await metric.collect_metric()
-            # Replace existing metric for the same provider
-            metrics_output[:] = [m for m in metrics_output if provider["name"] not in m]
-            metrics_output.append(result)
+    logging.debug(f"Created metrics: {metrics}")
 
-        except Exception as e:
-            logging.error(f"Error collecting metrics for {provider['name']}: {e}")
+    tasks = [asyncio.create_task(metric.collect_metric()) for metric in metrics]
 
-        await asyncio.sleep(provider.get("interval", 60))
+    try:
+        await asyncio.gather(*tasks)
+
+    except Exception as e:
+        logging.error(f"Error collecting metrics for {provider['name']}: {e}")
 
 async def main():
-    """
-    Launch metric collection tasks for all configured providers.
-    """
+    """Launch metric collection tasks for all providers."""
     config = ConfigLoader.load_config(CONFIG_PATH)
 
     tasks = [
-        collect_metrics(provider)
+        collect_metrics(provider,
+                        config.get("timeout", 30),
+                        config.get("interval", 60))
         for provider in config["providers"]
     ]
-
+    
     await asyncio.gather(*tasks)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage app lifecycle: start and stop tasks."""
+    task = asyncio.create_task(main())
+    yield
+    task.cancel()
+
+app = FastAPI(lifespan=lifespan)
+
+@app.get("/metrics", response_class=PlainTextResponse)
+async def get_metrics():
+    """Expose metrics in Prometheus-compatible format."""
+    all_metrics = BaseMetric.get_all_latest_values()
+    return "\n".join(all_metrics)

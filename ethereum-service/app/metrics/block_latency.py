@@ -1,9 +1,8 @@
 import json
-import asyncio
-import websockets
 from datetime import datetime, timezone
+import websockets
 
-from common.metric_base import BaseMetric
+from common.metric_base import WebSocketMetric
 from common.factory import MetricFactory
 
 import logging
@@ -11,89 +10,106 @@ import logging
 
 
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
-class EthereumBlockLatencyMetric(BaseMetric):
+class EthereumBlockLatencyMetric(WebSocketMetric):
     """
     Collects block latency for Ethereum providers with a persistent WebSocket connection.
+    Inherits from WebSocketMetric to handle reconnection, retries, and infinite loop.
     """
 
-    def __init__(self, blockchain_name, websocket_endpoint, http_endpoint, provider, timeout, interval):
-        super().__init__(blockchain_name, websocket_endpoint, provider, timeout, interval)
-        self.http_endpoint = http_endpoint  # HTTP endpoint for potential future use
-        self.should_run = True
+    def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval):
+        super().__init__(
+            metric_name="block_latency_seconds",
+            blockchain_name=blockchain_name,
+            provider=provider,
+            http_endpoint=http_endpoint,
+            ws_endpoint=ws_endpoint,
+            timeout=timeout,
+            interval=interval
+        )
 
-    async def connect_and_subscribe(self, websocket):
+    async def connect(self):
+        """
+        Establish WebSocket connection and handle subscription to the newHeads event.
+        """
+        try:
+            websocket = await websockets.connect(
+                self.ws_endpoint,
+                ping_timeout=self.timeout,
+                close_timeout=self.timeout
+            )
+            await self.subscribe(websocket)
+            logging.info(f"Connected to {self.ws_endpoint} for {self.blockchain_name}")
+            return websocket
+        
+        except Exception as e:
+            logging.error(f"Error connecting to WebSocket: {str(e)}")
+            raise
+
+    async def subscribe(self, websocket):
         """
         Subscribe to the newHeads event on the Ethereum WebSocket endpoint.
         """
-        await websocket.send(json.dumps({
-            "id": 1,
-            "jsonrpc": "2.0",
-            "method": "eth_subscribe",
-            "params": ["newHeads"]
-        }))
-        response = await websocket.recv()
-        subscription_data = json.loads(response)
+        try:
+            subscription_msg = json.dumps({
+                "id": 1,
+                "jsonrpc": "2.0",
+                "method": "eth_subscribe",
+                "params": ["newHeads"]
+            })
+            await websocket.send(subscription_msg)
+            response = await websocket.recv()
+            subscription_data = json.loads(response)
 
-        if subscription_data.get("result") is None:
-            raise ValueError("Subscription to newHeads failed")
+            if subscription_data.get("result") is None:
+                raise ValueError("Subscription to newHeads failed")
+            
+            logging.info("Successfully subscribed to 'newHeads' event.")
 
-    def calculate_latency(self, block_timestamp_hex):
+        except Exception as e:
+            logging.error(f"Error subscribing to newHeads: {str(e)}")
+            raise
+
+    def process_data(self, block):
         """
         Calculate block latency in seconds.
         """
-        block_timestamp = int(block_timestamp_hex, 16)
-        block_time = datetime.fromtimestamp(block_timestamp, timezone.utc)
-        current_time = datetime.now(timezone.utc)
+        try:
+            block_timestamp = int(block.get("timestamp", "0x0"), 16)
+            block_time = datetime.fromtimestamp(block_timestamp, timezone.utc)
+            current_time = datetime.now(timezone.utc)
+            latency = (current_time - block_time).total_seconds()
+            return latency
         
-        return (current_time - block_time).total_seconds()
+        except ValueError as e:
+            logging.error(f"Invalid timestamp received: {str(e)}")
+            return None
 
-    async def collect_metric(self):
+    async def listen_for_data(self, websocket):
         """
-        Continuously collect block latency with persistent WebSocket connection.
+        Listen for data from the WebSocket and process the block latency.
         """
-        logging.debug("Collecting block latency")
+        try:
+            response = await websocket.recv()
+            response_data = json.loads(response)
+
+            if "params" in response_data:
+                return response_data["params"]["result"]
+            
+            return None
         
-        while self.should_run:
-            try:
-                async with websockets.connect(
-                    self.endpoint,
-                    ping_timeout=self.timeout,
-                    close_timeout=self.timeout
-                ) as websocket:
-                    logging.debug("Connected to WebSocket")
-                    await self.connect_and_subscribe(websocket)
+        except Exception as e:
+            logging.error(f"Error receiving or processing data: {str(e)}")
+            return None
 
-                    # Listen for new blocks
-                    while self.should_run:
-                        response = await websocket.recv()
-                        response_data = json.loads(response)
-
-                        if "params" in response_data:
-                            block = response_data["params"]["result"]
-                            latency = self.calculate_latency(block["timestamp"])
-                            logging.debug(f"Calculated latency: {latency}")
-                            return self.format_prometheus_metric(latency)
-                        
-            except websockets.ConnectionClosed as e:
-                logging.error(f"WebSocket connection closed: {e}")
-                await asyncio.sleep(5)
-
-            except Exception as e:
-                logging.error(f"Error collecting block latency: {e}")
-                return self.format_prometheus_metric(-1)
-
-    def format_prometheus_metric(self, latency):
+    async def update_metric(self, value):
         """
-        Format the metric as a Prometheus-compatible string with labels.
+        Updates the metric with the latest collected value.
+        This method is inherited from the WebSocketMetric class.
         """
-        return (
-            f'block_latency_seconds{{blockchain="{self.blockchain_name}", '
-            f'provider="{self.provider}"}} {latency}'
-        )
+        await super().update_metric(value)
+        logging.info(f"Updated metric {self.metric_name} for {self.provider} with value {value}")
 
 
-
-# Register the metric with the factory
 MetricFactory.register("Ethereum", EthereumBlockLatencyMetric)

@@ -1,7 +1,8 @@
 import time
-import aiohttp
+import aiohttp # type: ignore
+import asyncio
 
-from common.metric_base import BaseMetric
+from common.metric_base import HttpMetric
 from common.factory import MetricFactory
 
 import logging
@@ -9,57 +10,63 @@ import logging
 
 
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
-class HttpCallLatencyMetric(BaseMetric):
+class HttpCallLatencyMetric(HttpMetric):
     """
     Collects call latency for HTTP-based Ethereum endpoints.
+    Inherits from HttpMetric for common behavior and handling.
     """
 
-    async def collect_metric(self):
-        """
-        Measure call latency for HTTP endpoints.
-        """
-        logging.debug("Collecting HTTP call latency")
-        
-        while self.should_run:
-            start_time = time.monotonic()
-
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(
-                        self.endpoint,
-                        headers={"Accept": "application/json", "Content-Type": "application/json"},
-                        json={
-                            "id": 1,
-                            "jsonrpc": "2.0",
-                            "method": "eth_blockNumber"
-                        },
-                        timeout=self.timeout
-                    ) as response:
-                        
-                        if response.status == 200:
-                            await response.json()  # Ensure response body is read
-                            latency = time.monotonic() - start_time
-                            logging.debug(f"Calculated latency: {latency}")
-                            return self.format_prometheus_metric(latency)
-                        
-                        else:
-                            raise ValueError(f"Unexpected status code: {response.status}")
-                        
-            except Exception as e:
-                logging.error(f"Error collecting HTTP call latency: {e}")
-                return self.format_prometheus_metric(-1)
-
-    def format_prometheus_metric(self, latency):
-        """
-        Format the metric as a Prometheus-compatible string with labels.
-        """
-        return (
-            f'call_latency_seconds{{blockchain="{self.blockchain_name}", '
-            f'provider="{self.provider}"}} {latency}'
+    def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval):
+        super().__init__(
+            metric_name="http_call_latency_seconds",
+            blockchain_name=blockchain_name,
+            provider=provider,
+            http_endpoint=http_endpoint,
+            ws_endpoint=ws_endpoint,
+            timeout=timeout,
+            interval=interval
         )
 
+    async def fetch_data(self):
+        """
+        Perform the HTTP request and return the response time.
+        """
+        try:
+            async with aiohttp.ClientSession() as session:
+                start_time = time.monotonic()
+                async with session.post(
+                    self.http_endpoint,
+                    headers={"Accept": "application/json", "Content-Type": "application/json"},
+                    json={
+                        "id": 1,
+                        "jsonrpc": "2.0",
+                        "method": "eth_blockNumber"
+                    },
+                    timeout=self.timeout
+                ) as response:
+                    if response.status == 200:
+                        await response.json()
+                        latency = time.monotonic() - start_time
+                        return latency
+                    
+                    else:
+                        raise ValueError(f"Unexpected status code: {response.status}")
+                    
+        except Exception as e:
+            logging.error(f"Error collecting HTTP call latency for {self.provider}: {e}")
+            return None
 
-# Register the metric with the factory
+    async def update_metric(self, value):
+        """
+        Update the metric with the latest collected value.
+        """
+        await super().update_metric(value)
+        logging.info(f"Updated metric {self.metric_name} for {self.provider} with value {value}")
+
+    def process_data(self, value):
+        return value
+
+
 MetricFactory.register("Ethereum", HttpCallLatencyMetric)
