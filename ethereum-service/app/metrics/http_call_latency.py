@@ -1,6 +1,5 @@
 import time
-import aiohttp # type: ignore
-import asyncio
+import aiohttp
 
 from common.metric_base import HttpMetric
 from common.factory import MetricFactory
@@ -20,7 +19,7 @@ class HttpCallLatencyMetric(HttpMetric):
 
     def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval):
         super().__init__(
-            metric_name="http_call_latency_seconds",
+            metric_name="eth_block_number_latency_seconds",
             blockchain_name=blockchain_name,
             provider=provider,
             http_endpoint=http_endpoint,
