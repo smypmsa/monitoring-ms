@@ -17,7 +17,7 @@ class HttpCallLatencyMetric(HttpMetric):
     Inherits from HttpMetric for common behavior and handling.
     """
 
-    def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval):
+    def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval, extra_params):
         super().__init__(
             metric_name="eth_block_number_latency_seconds",
             blockchain_name=blockchain_name,
@@ -25,7 +25,8 @@ class HttpCallLatencyMetric(HttpMetric):
             http_endpoint=http_endpoint,
             ws_endpoint=ws_endpoint,
             timeout=timeout,
-            interval=interval
+            interval=interval,
+            extra_params=None
         )
 
     async def fetch_data(self):

@@ -18,7 +18,7 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
     Inherits from WebSocketMetric to handle reconnection, retries, and infinite loop.
     """
 
-    def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval):
+    def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval, extra_params):
         super().__init__(
             metric_name="block_latency_seconds",
             blockchain_name=blockchain_name,
@@ -40,7 +40,7 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
                 close_timeout=self.timeout
             )
             await self.subscribe(websocket)
-            logging.info(f"Connected to {self.ws_endpoint} for {self.blockchain_name}")
+            logging.debug(f"Connected to {self.ws_endpoint} for {self.blockchain_name}")
             return websocket
         
         except Exception as e:
