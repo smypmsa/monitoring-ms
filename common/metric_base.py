@@ -13,7 +13,7 @@ class BaseMetric(ABC):
     
     _instances = []
 
-    def __init__(self, metric_name: str, blockchain_name: str, provider: str, http_endpoint: str, ws_endpoint: str, timeout: int, interval: int):
+    def __init__(self, metric_name: str, blockchain_name: str, provider: str, http_endpoint: str, ws_endpoint: str, timeout: int, interval: int, extra_params: dict = None):
         self.metric_name = metric_name
         self.blockchain_name = blockchain_name
         self.provider = provider
@@ -23,6 +23,7 @@ class BaseMetric(ABC):
         self.interval = interval
         self.retry_interval = interval
         self.latest_value = None
+        self.extra_params = extra_params or {}
 
         self.__class__._instances.append(self)
 
