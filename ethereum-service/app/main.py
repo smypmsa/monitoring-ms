@@ -5,18 +5,18 @@ from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from contextlib import asynccontextmanager
 
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+#import sys
+#import os
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from common.config_loader import ConfigLoader
 from common.factory import MetricFactory
 from common.metric_base import BaseMetric
 
-import app.metrics.block_latency
-import app.metrics.http_call_latency
+#import app.metrics.block_latency
+#import app.metrics.http_call_latency
 import app.metrics.transaction_latency
+#import app.metrics.eth_call_latency
 
 
 
@@ -57,7 +57,7 @@ async def main():
 
     tasks = [
         collect_metrics(provider,
-                        config.get("timeout", 30),
+                        config.get("timeout", 50),
                         config.get("interval", 60),
                         extra_params={
                             'tx_data': config.get('tx_data'),

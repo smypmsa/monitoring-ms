@@ -19,14 +19,13 @@ class HttpCallLatencyMetric(HttpMetric):
 
     def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval, extra_params):
         super().__init__(
-            metric_name="eth_block_number_latency_seconds",
+            metric_name="eth_block_number_latency",
             blockchain_name=blockchain_name,
             provider=provider,
             http_endpoint=http_endpoint,
             ws_endpoint=ws_endpoint,
             timeout=timeout,
-            interval=interval,
-            extra_params=None
+            interval=interval
         )
 
     async def fetch_data(self):
@@ -49,21 +48,18 @@ class HttpCallLatencyMetric(HttpMetric):
                     if response.status == 200:
                         await response.json()
                         latency = time.monotonic() - start_time
-                        return latency
+                        return [
+                            {"key": "seconds", "value": latency}
+                        ]
                     
                     else:
                         raise ValueError(f"Unexpected status code: {response.status}")
                     
         except Exception as e:
             logging.error(f"Error collecting HTTP call latency for {self.provider}: {e}")
-            return None
-
-    async def update_metric(self, value):
-        """
-        Update the metric with the latest collected value.
-        """
-        await super().update_metric(value)
-        logging.info(f"Updated metric {self.metric_name} for {self.provider} with value {value}")
+            return [
+                {"key": "seconds", "value": latency}
+            ]
 
     def process_data(self, value):
         return value

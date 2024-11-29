@@ -20,7 +20,7 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
 
     def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval, extra_params):
         super().__init__(
-            metric_name="block_latency_seconds",
+            metric_name="block_latency",
             blockchain_name=blockchain_name,
             provider=provider,
             http_endpoint=http_endpoint,
@@ -28,6 +28,8 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
             timeout=timeout,
             interval=interval
         )
+
+        self.last_block_hash = None
 
     async def connect(self):
         """
@@ -65,7 +67,7 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
             if subscription_data.get("result") is None:
                 raise ValueError("Subscription to newHeads failed")
             
-            logging.info("Successfully subscribed to 'newHeads' event.")
+            logging.debug("Successfully subscribed to 'newHeads' event.")
 
         except Exception as e:
             logging.error(f"Error subscribing to newHeads: {str(e)}")
@@ -80,11 +82,15 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
             block_time = datetime.fromtimestamp(block_timestamp, timezone.utc)
             current_time = datetime.now(timezone.utc)
             latency = (current_time - block_time).total_seconds()
-            return latency
+            return [
+                {"key": "seconds", "value": latency}
+            ]
         
         except ValueError as e:
             logging.error(f"Invalid timestamp received: {str(e)}")
-            return None
+            return [
+                {"key": "seconds", "value": -1}
+            ]
 
     async def listen_for_data(self, websocket):
         """
@@ -95,21 +101,22 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
             response_data = json.loads(response)
 
             if "params" in response_data:
-                return response_data["params"]["result"]
+                block = response_data["params"]["result"]
+                block_hash = block["hash"]
+
+                # Only process the block if it's not a duplicate
+                if block_hash != self.last_block_hash:
+                    self.last_block_hash = block_hash
+                    return block
+                else:
+                    logging.debug(f"Duplicate block detected: {block_hash}, skipping...")
+                    return None
             
             return None
         
         except Exception as e:
             logging.error(f"Error receiving or processing data: {str(e)}")
             return None
-
-    async def update_metric(self, value):
-        """
-        Updates the metric with the latest collected value.
-        This method is inherited from the WebSocketMetric class.
-        """
-        await super().update_metric(value)
-        logging.info(f"Updated metric {self.metric_name} for {self.provider} with value {value}")
 
 
 MetricFactory.register("Ethereum", EthereumBlockLatencyMetric)

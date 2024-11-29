@@ -40,6 +40,7 @@ class TransactionLatencyMetric(HttpMetric):
         try:
             with open(self.tx_data['contract_abi'], 'r') as abi_file:
                 return json.load(abi_file)
+            
         except Exception as e:
             logging.error(f"Error loading ABI: {e}")
             raise
@@ -49,6 +50,7 @@ class TransactionLatencyMetric(HttpMetric):
         web3 = Web3(Web3.HTTPProvider(self.http_endpoint, {"timeout": self.timeout}))
         if not web3.is_connected():
             raise ValueError(f"Failed to connect to {self.provider} Ethereum node")
+        
         return web3
 
     async def encode_transaction_data(self, web3: Web3, sender_account):
@@ -65,6 +67,7 @@ class TransactionLatencyMetric(HttpMetric):
                 'to': self.contract_address,
                 'data': transaction_data
             })
+        
         except Exception as e:
             logging.error(f"Error estimating gas: {e}")
             raise
@@ -72,11 +75,11 @@ class TransactionLatencyMetric(HttpMetric):
     async def get_gas_price(self, web3: Web3):
         """Fetch the current gas price asynchronously."""
         try:
-            return await asyncio.to_thread(lambda: web3.eth.gas_price)  # Access as an attribute, not a callable
+            return await asyncio.to_thread(lambda: web3.eth.gas_price)
+        
         except Exception as e:
             logging.error(f"Error fetching gas price: {e}")
             raise
-
 
     async def fetch_data(self):
         """Perform the HTTP request to send a transaction and track its confirmation."""
@@ -89,19 +92,31 @@ class TransactionLatencyMetric(HttpMetric):
             gas_estimate = await self.estimate_gas(web3, transaction_data)
 
             start_time = time.monotonic()
-            transaction_hash = await self.send_transaction(web3, sender_account, transaction_data, gas_estimate, gas_price)
+            start_block_number = web3.eth.block_number
 
-            confirmation_time = await self.wait_for_confirmation(web3, transaction_hash)
+            transaction_hash = await self.send_transaction(web3, sender_account, transaction_data, gas_estimate, gas_price)
+            confirmation_time, confirmation_block_number = await self.wait_for_confirmation(web3, transaction_hash)
 
             if confirmation_time is None:
-                return -1
+                return [
+                    {"key": "seconds", "value": -1},
+                    {"key": "blocks", "value": -1}
+                ]
 
             latency = confirmation_time - start_time
-            return latency
+            block_latency = confirmation_block_number - start_block_number
+
+            return [
+                {"key": "seconds", "value": latency},
+                {"key": "blocks", "value": block_latency}
+            ]
 
         except Exception as e:
             logging.error(f"Error collecting transaction latency for {self.provider}: {e}")
-            return None
+            return [
+                {"key": "seconds", "value": -1},
+                {"key": "blocks", "value": -1}
+            ]
 
     async def send_transaction(self, web3: Web3, sender_account, transaction_data, gas_estimate, gas_price):
         """Send a transaction to the Ethereum network and return the transaction hash."""
@@ -131,21 +146,17 @@ class TransactionLatencyMetric(HttpMetric):
 
             if receipt['status'] == 1:
                 confirmation_time = time.monotonic()
-                logging.debug(f"Transaction confirmed: {transaction_hash}")
-                return confirmation_time
+                confirmation_block_number = receipt['blockNumber']
+                logging.debug(f"Transaction confirmed: {transaction_hash} at block {confirmation_block_number}")
+                return confirmation_time, confirmation_block_number
 
             else:
                 logging.error(f"Transaction failed: {transaction_hash}")
-                return None
+                return None, None
 
         except Exception as e:
             logging.error(f"Error while waiting for confirmation: {str(e)}")
-            return None
-
-    async def update_metric(self, value):
-        """Update the metric with the latest collected value."""
-        await super().update_metric(value)
-        logging.info(f"Updated metric {self.metric_name} for {self.provider} with value {value}")
+            return None, None
 
     def process_data(self, value):
         return value
