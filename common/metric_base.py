@@ -22,8 +22,9 @@ class BaseMetric(ABC):
         self.timeout = timeout
         self.interval = interval
         self.retry_interval = interval
-        self.latest_value = None
         self.extra_params = extra_params or {}
+
+        self.latest_values = {}
 
         self.__class__._instances.append(self)
 
@@ -41,8 +42,8 @@ class BaseMetric(ABC):
         """
         all_latest_values = []
         for metric_instance in cls._instances:
-            if hasattr(metric_instance, 'latest_value'):
-                all_latest_values.append(f"{metric_instance.metric_name}{{provider=\"{metric_instance.provider}\", blockchain=\"{metric_instance.blockchain_name}\"}} {metric_instance.latest_value}")
+            for metric_id, value in metric_instance.latest_values.items():
+                all_latest_values.append(f"{metric_instance.metric_name}_{metric_id}{{provider=\"{metric_instance.provider}\", blockchain=\"{metric_instance.blockchain_name}\"}} {value}")
         return all_latest_values
 
     @abstractmethod
@@ -68,19 +69,20 @@ class BaseMetric(ABC):
         
         return f'{self.metric_name}{{blockchain="{self.blockchain_name}", provider="{self.provider}"}} {self.latest_value}'
 
-    @abstractmethod
-    async def update_metric(self, value):
+    async def update_metric(self, value, metric_id="default"):
         """
         Update the metric with the latest value.
+        Supports multiple metric types for the same instance (e.g., latency, success rate).
         """
-        self.latest_value = value
+        self.latest_values[metric_id] = value
+        logging.info(f"Updated metric {self.metric_name}_{metric_id} for {self.provider} with value {value}")
     
     async def handle_error(self, e: Exception):
         """
         Handle errors gracefully with retry logic and logging.
         """
         logging.error(f"Error in {self.blockchain_name} ({self.provider}): {str(e)}")
-        logging.info(f"Retrying in {self.retry_interval} seconds...")
+        logging.debug(f"Retrying in {self.retry_interval} seconds...")
         await asyncio.sleep(self.retry_interval)
 
 
@@ -124,8 +126,11 @@ class WebSocketMetric(BaseMetric):
 
                 while True:
                     data = await self.listen_for_data(websocket)
-                    metric_value = self.process_data(data)
-                    await self.update_metric(metric_value)
+
+                    if data:
+                        metric_values = self.process_data(data)
+                        for metric_value in metric_values:
+                            await self.update_metric(value=metric_value["value"], metric_id=metric_value["key"])
 
             except Exception as e:
                 await self.handle_error(e)
@@ -153,8 +158,11 @@ class HttpMetric(BaseMetric):
         while True:
             try:
                 data = await self.fetch_data()
-                self.latest_value = self.process_data(data)
-                await self.update_metric(self.latest_value)
+                
+                if data:
+                    metric_values = self.process_data(data)
+                    for metric_value in metric_values:
+                        await self.update_metric(value=metric_value["value"], metric_id=metric_value["key"])
 
             except Exception as e:
                 await self.handle_error(e)
