@@ -25,6 +25,7 @@ class BaseMetric(ABC):
         self.extra_params = extra_params or {}
 
         self.latest_values = {}
+        self.status = "success"
 
         self.__class__._instances.append(self)
 
@@ -43,7 +44,7 @@ class BaseMetric(ABC):
         all_latest_values = []
         for metric_instance in cls._instances:
             for metric_id, value in metric_instance.latest_values.items():
-                all_latest_values.append(f"{metric_instance.metric_name}_{metric_id}{{provider=\"{metric_instance.provider}\", blockchain=\"{metric_instance.blockchain_name}\"}} {value}")
+                all_latest_values.append(f"{metric_instance.metric_name}_{metric_id}{{provider=\"{metric_instance.provider}\", blockchain=\"{metric_instance.blockchain_name}\", status=\"{metric_instance.status}\"}} {value}")
         return all_latest_values
 
     @abstractmethod
@@ -62,25 +63,27 @@ class BaseMetric(ABC):
 
     def get_prometheus_format(self):
         """
-        Return the metric in Prometheus format.
+        Return the metric in Prometheus format, including status.
         """
         if self.latest_value is None:
             raise ValueError("Metric value is not set yet.")
         
-        return f'{self.metric_name}{{blockchain="{self.blockchain_name}", provider="{self.provider}"}} {self.latest_value}'
+        return f'{self.metric_name}{{blockchain="{self.blockchain_name}", provider="{self.provider}", status="{self.status}"}} {self.latest_value}'
 
     async def update_metric(self, value, metric_id="default"):
         """
-        Update the metric with the latest value.
+        Update the metric with the latest value and status.
         Supports multiple metric types for the same instance (e.g., latency, success rate).
         """
+        self.status = "success"
         self.latest_values[metric_id] = value
-        logging.info(f"Updated metric {self.metric_name}_{metric_id} for {self.provider} with value {value}")
+        logging.info(f"Updated metric {self.metric_name}_{metric_id} for {self.provider} with value {value} and status {self.status}")
     
     async def handle_error(self, e: Exception):
         """
         Handle errors gracefully with retry logic and logging.
         """
+        self.status = "failed"
         logging.error(f"Error in {self.blockchain_name} ({self.provider}): {str(e)}")
         logging.debug(f"Retrying in {self.retry_interval} seconds...")
         await asyncio.sleep(self.retry_interval)

@@ -98,10 +98,7 @@ class TransactionLatencyMetric(HttpMetric):
             confirmation_time, confirmation_block_number = await self.wait_for_confirmation(web3, transaction_hash)
 
             if confirmation_time is None:
-                return [
-                    {"key": "seconds", "value": -1},
-                    {"key": "blocks", "value": -1}
-                ]
+                raise ValueError("Transaction confirmation time is empty.")
 
             latency = confirmation_time - start_time
             block_latency = confirmation_block_number - start_block_number
@@ -113,10 +110,7 @@ class TransactionLatencyMetric(HttpMetric):
 
         except Exception as e:
             logging.error(f"Error collecting transaction latency for {self.provider}: {e}")
-            return [
-                {"key": "seconds", "value": -1},
-                {"key": "blocks", "value": -1}
-            ]
+            raise
 
     async def send_transaction(self, web3: Web3, sender_account, transaction_data, gas_estimate, gas_price):
         """Send a transaction to the Ethereum network and return the transaction hash."""
@@ -152,11 +146,11 @@ class TransactionLatencyMetric(HttpMetric):
 
             else:
                 logging.error(f"Transaction failed: {transaction_hash}")
-                return None, None
+                raise
 
         except Exception as e:
             logging.error(f"Error while waiting for confirmation: {str(e)}")
-            return None, None
+            raise
 
     def process_data(self, value):
         return value

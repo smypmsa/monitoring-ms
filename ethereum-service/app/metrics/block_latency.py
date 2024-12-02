@@ -88,9 +88,7 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
         
         except ValueError as e:
             logging.error(f"Invalid timestamp received: {str(e)}")
-            return [
-                {"key": "seconds", "value": -1}
-            ]
+            raise
 
     async def listen_for_data(self, websocket):
         """
@@ -116,7 +114,7 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
         
         except Exception as e:
             logging.error(f"Error receiving or processing data: {str(e)}")
-            return None
+            raise
 
 
 MetricFactory.register("Ethereum", EthereumBlockLatencyMetric)

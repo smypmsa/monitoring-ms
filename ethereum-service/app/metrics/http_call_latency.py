@@ -57,9 +57,7 @@ class HttpCallLatencyMetric(HttpMetric):
                     
         except Exception as e:
             logging.error(f"Error collecting HTTP call latency for {self.provider}: {e}")
-            return [
-                {"key": "seconds", "value": latency}
-            ]
+            raise
 
     def process_data(self, value):
         return value

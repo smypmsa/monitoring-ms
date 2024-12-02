@@ -71,9 +71,7 @@ class EthCallLatencyMetric(HttpMetric):
             end_time = time.monotonic()
 
             if response is None:
-                return [
-                    {"key": "seconds", "value": -1}
-                ]
+                raise ValueError("Response is empty")
 
             latency = end_time - start_time
             return [
@@ -82,9 +80,7 @@ class EthCallLatencyMetric(HttpMetric):
 
         except Exception as e:
             logging.error(f"Error collecting eth_call latency for {self.provider}: {e}")
-            return [
-                {"key": "seconds", "value": -1}
-            ]
+            raise
 
     async def simulate_transaction(self, web3: Web3, transaction_data):
         """Simulate the transaction using eth_call and return the result."""
@@ -97,7 +93,7 @@ class EthCallLatencyMetric(HttpMetric):
         
         except Exception as e:
             logging.error(f"Error simulating transaction with eth_call: {e}")
-            return None
+            raise
 
     def process_data(self, value):
         return value
