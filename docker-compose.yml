@@ -1,3 +1,16 @@
+x-default-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "300m"
+    max-file: '3'
+
+networks:
+  monitoring_network:
+    driver: bridge
+
+volumes:
+  prometheus-data: null
+
 services:
   ethereum-service:
     build:
@@ -10,6 +23,7 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - monitoring_network
+    logging: *default-logging
 
   api-gateway:
     build:
@@ -22,7 +36,18 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - monitoring_network
+    logging: *default-logging
 
-networks:
-  monitoring_network:
-    driver: bridge
+  prometheus:
+    image: prom/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - monitoring_network
+    logging: *default-logging
