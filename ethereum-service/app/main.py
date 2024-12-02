@@ -11,7 +11,7 @@ from common.metric_base import BaseMetric
 
 import app.metrics.block_latency
 import app.metrics.http_call_latency
-import app.metrics.transaction_latency
+#import app.metrics.transaction_latency
 import app.metrics.eth_call_latency
 
 
