@@ -1,18 +1,13 @@
 import asyncio
 import logging
-
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from contextlib import asynccontextmanager
 
 from common.config_loader import ConfigLoader
 from common.factory import MetricFactory
-from common.metric_base import BaseMetric
-
-import app.metrics.block_latency
-import app.metrics.http_call_latency
-#import app.metrics.transaction_latency
-import app.metrics.eth_call_latency
+from common.metric_base import BaseMetric, MetricConfig
+from app.metrics.block_latency import EthereumBlockLatencyMetric
 
 
 
@@ -22,29 +17,34 @@ logging.basicConfig(level=logging.INFO)
 CONFIG_PATH = "app/config/endpoints.json"
 SECRETS_PATH = "app/secrets/secrets.json"
 
+MetricFactory.register(
+    "Ethereum",
+    EthereumBlockLatencyMetric,
+    metric_name="ws_block_reception_latency_seconds"
+)
+
 async def collect_metrics(provider, timeout, interval, extra_params: dict):
     """Collect metrics for both WebSocket and HTTP endpoints."""
     logging.debug(f"Starting metrics collection for provider: {provider['name']}")
-    
-    metrics = MetricFactory.create_metrics(
-        blockchain_name=provider["blockchain"],
-        provider=provider["name"],
-        timeout=timeout,
-        interval=interval,
-        ws_endpoint=provider.get("websocket_endpoint"),
-        http_endpoint=provider.get("http_endpoint"),
-        extra_params=extra_params
-    )
-
-    logging.debug(f"Created metrics: {metrics}")
-
-    tasks = [asyncio.create_task(metric.collect_metric()) for metric in metrics]
 
     try:
+        metrics = MetricFactory.create_metrics(
+            blockchain_name=provider["blockchain"],
+            config=MetricConfig(timeout=timeout, interval=interval),  
+            provider=provider["name"],
+            ws_endpoint=provider["websocket_endpoint"],
+            http_endpoint=provider["http_endpoint"],
+            extra_params=extra_params
+        )
+
+        logging.debug(f"Created metrics: {metrics}")
+
+        tasks = [asyncio.create_task(metric.collect_metric()) for metric in metrics]
         await asyncio.gather(*tasks)
 
     except Exception as e:
         logging.error(f"Error collecting metrics for {provider['name']}: {e}")
+
 
 async def main():
     """Launch metric collection tasks for all providers."""
@@ -52,18 +52,18 @@ async def main():
     secrets = ConfigLoader.load_secrets(SECRETS_PATH)
 
     tasks = [
-        collect_metrics(provider,
-                        config.get("timeout", 50),
-                        config.get("interval", 60),
-                        extra_params={
-                            'tx_data': provider.get('tx_data'),
-                            'private_key': secrets.get(provider.get('tx_data')['secret_index'])
-                        })
+        collect_metrics(
+            provider,
+            config.get("timeout", 50),
+            config.get("interval", 60),
+            extra_params={
+                'tx_data': provider.get('data'),
+                'private_key': secrets.get(provider.get('data', {}).get('secret_index'))
+            })
         for provider in config["providers"]
     ]
     
     await asyncio.gather(*tasks)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

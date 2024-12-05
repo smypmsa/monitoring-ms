@@ -1,11 +1,9 @@
 import json
+import logging
 from datetime import datetime, timezone
 import websockets
 
-from common.metric_base import WebSocketMetric
-from common.factory import MetricFactory
-
-import logging
+from common.metric_base import WebSocketMetric, MetricConfig, MetricLabels, MetricLabelKey
 
 
 
@@ -18,17 +16,17 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
     Inherits from WebSocketMetric to handle reconnection, retries, and infinite loop.
     """
 
-    def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval, extra_params):
-        super().__init__(
-            metric_name="block_latency",
-            blockchain_name=blockchain_name,
-            provider=provider,
-            http_endpoint=http_endpoint,
-            ws_endpoint=ws_endpoint,
-            timeout=timeout,
-            interval=interval
-        )
+    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+        ws_endpoint = kwargs.pop("ws_endpoint", None)
+        http_endpoint = kwargs.pop("http_endpoint", None)
 
+        super().__init__(
+            metric_name=metric_name,
+            labels=labels,
+            config=config,
+            ws_endpoint=ws_endpoint,
+            http_endpoint=http_endpoint
+        )
         self.last_block_hash = None
 
     async def connect(self):
@@ -38,11 +36,11 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
         try:
             websocket = await websockets.connect(
                 self.ws_endpoint,
-                ping_timeout=self.timeout,
-                close_timeout=self.timeout
+                ping_timeout=self.config.timeout,
+                close_timeout=self.config.timeout
             )
             await self.subscribe(websocket)
-            logging.debug(f"Connected to {self.ws_endpoint} for {self.blockchain_name}")
+            logging.debug(f"Connected to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
             return websocket
         
         except Exception as e:
@@ -82,9 +80,7 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
             block_time = datetime.fromtimestamp(block_timestamp, timezone.utc)
             current_time = datetime.now(timezone.utc)
             latency = (current_time - block_time).total_seconds()
-            return [
-                {"key": "seconds", "value": latency}
-            ]
+            return latency
         
         except ValueError as e:
             logging.error(f"Invalid timestamp received: {str(e)}")
@@ -115,6 +111,3 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
         except Exception as e:
             logging.error(f"Error receiving or processing data: {str(e)}")
             raise
-
-
-MetricFactory.register("Ethereum", EthereumBlockLatencyMetric)
