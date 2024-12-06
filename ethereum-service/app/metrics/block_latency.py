@@ -18,15 +18,14 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
 
     def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
         ws_endpoint = kwargs.pop("ws_endpoint", None)
-        http_endpoint = kwargs.pop("http_endpoint", None)
 
         super().__init__(
             metric_name=metric_name,
             labels=labels,
             config=config,
-            ws_endpoint=ws_endpoint,
-            http_endpoint=http_endpoint
+            ws_endpoint=ws_endpoint
         )
+        
         self.last_block_hash = None
 
     async def connect(self):

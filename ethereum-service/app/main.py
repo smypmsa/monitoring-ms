@@ -7,7 +7,10 @@ from contextlib import asynccontextmanager
 from common.config_loader import ConfigLoader
 from common.factory import MetricFactory
 from common.metric_base import BaseMetric, MetricConfig
+
 from app.metrics.block_latency import EthereumBlockLatencyMetric
+from app.metrics.eth_call_latency import EthCallLatencyMetric
+from app.metrics.http_call_latency import HttpCallLatencyMetric
 
 
 
@@ -18,12 +21,16 @@ CONFIG_PATH = "app/config/endpoints.json"
 SECRETS_PATH = "app/secrets/secrets.json"
 
 MetricFactory.register(
-    "Ethereum",
-    EthereumBlockLatencyMetric,
-    metric_name="ws_block_reception_latency_seconds"
+    {
+        "Ethereum": [
+            (EthereumBlockLatencyMetric, "ws_block_reception_latency_seconds"),
+            (EthCallLatencyMetric, "http_request_latency_seconds"),
+            (HttpCallLatencyMetric, "http_request_latency_seconds"),
+        ]
+    }
 )
 
-async def collect_metrics(provider, timeout, interval, extra_params: dict):
+async def collect_metrics(provider, source_region, timeout, interval, extra_params: dict):
     """Collect metrics for both WebSocket and HTTP endpoints."""
     logging.debug(f"Starting metrics collection for provider: {provider['name']}")
 
@@ -32,6 +39,8 @@ async def collect_metrics(provider, timeout, interval, extra_params: dict):
             blockchain_name=provider["blockchain"],
             config=MetricConfig(timeout=timeout, interval=interval),  
             provider=provider["name"],
+            source_region=source_region,
+            target_region=provider["region"],
             ws_endpoint=provider["websocket_endpoint"],
             http_endpoint=provider["http_endpoint"],
             extra_params=extra_params
@@ -54,6 +63,7 @@ async def main():
     tasks = [
         collect_metrics(
             provider,
+            config.get("source_region", "default"),
             config.get("timeout", 50),
             config.get("interval", 60),
             extra_params={

@@ -1,9 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
 import logging
 import asyncio
-from enum import Enum
+import uuid
 
+from enum import Enum
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Union
 
 
 
@@ -58,7 +59,7 @@ class MetricLabels:
         labels (List[MetricLabel]): A list of MetricLabel instances.
     """
 
-    def __init__(self, source_region: str, target_region: str, blockchain: str, provider: str, api_method: str, response_status: str = "success") -> None:
+    def __init__(self, source_region: str, target_region: str, blockchain: str, provider: str, api_method: str = "default", response_status: str = "success") -> None:
         self.labels = [
             MetricLabel(MetricLabelKey.SOURCE_REGION, source_region),
             MetricLabel(MetricLabelKey.TARGET_REGION, target_region),
@@ -88,8 +89,9 @@ class MetricLabels:
         for label in self.labels:
             if label.key == label_name:
                 label.value = new_value
-                logging.info(f"Updated label '{label_name.value}' to '{new_value}'")
+                logging.debug(f"Updated label '{label_name.value}' to '{new_value}'")
                 return
+            
         logging.warning(f"Label '{label_name.value}' not found!")
 
     def add_label(self, label_name: MetricLabelKey, label_value: str) -> None:
@@ -122,6 +124,7 @@ class MetricLabels:
         for label in self.labels:
             if label.key == label_name:
                 return label.value
+            
         return None
 
 
@@ -140,6 +143,7 @@ class BaseMetric(ABC):
 
     def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, 
                  ws_endpoint: Optional[str] = None, http_endpoint: Optional[str] = None) -> None:
+        self.metric_id = str(uuid.uuid4())  # Generate a unique ID for each metric instance
         self.metric_name = metric_name
         self.labels = labels
         self.config = config

@@ -1,10 +1,9 @@
 import time
 import aiohttp
-
-from common.metric_base import HttpMetric
-from common.factory import MetricFactory
-
 import logging
+
+from common.metric_base import HttpMetric, MetricLabels, MetricConfig, MetricLabelKey
+
 
 
 
@@ -17,16 +16,17 @@ class HttpCallLatencyMetric(HttpMetric):
     Inherits from HttpMetric for common behavior and handling.
     """
 
-    def __init__(self, blockchain_name, http_endpoint, ws_endpoint, provider, timeout, interval, extra_params):
+    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+        http_endpoint = kwargs.get("http_endpoint")
+
         super().__init__(
-            metric_name="eth_block_number_latency",
-            blockchain_name=blockchain_name,
-            provider=provider,
-            http_endpoint=http_endpoint,
-            ws_endpoint=ws_endpoint,
-            timeout=timeout,
-            interval=interval
+            metric_name=metric_name,
+            labels=labels,
+            config=config,
+            http_endpoint=http_endpoint
         )
+
+        self.labels.update_label(MetricLabelKey.API_METHOD, "eth_blockNumber")
 
     async def fetch_data(self):
         """
@@ -43,24 +43,19 @@ class HttpCallLatencyMetric(HttpMetric):
                         "jsonrpc": "2.0",
                         "method": "eth_blockNumber"
                     },
-                    timeout=self.timeout
+                    timeout=self.config.timeout  # Use the config timeout
                 ) as response:
                     if response.status == 200:
                         await response.json()
                         latency = time.monotonic() - start_time
-                        return [
-                            {"key": "seconds", "value": latency}
-                        ]
+                        return latency
                     
                     else:
                         raise ValueError(f"Unexpected status code: {response.status}")
                     
         except Exception as e:
-            logging.error(f"Error collecting HTTP call latency for {self.provider}: {e}")
+            logging.error(f"Error collecting HTTP call latency for {self.labels.get_label(MetricLabelKey.PROVIDER)}: {e}")
             raise
 
     def process_data(self, value):
         return value
-
-
-MetricFactory.register("Ethereum", HttpCallLatencyMetric)
