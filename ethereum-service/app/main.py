@@ -8,9 +8,9 @@ from common.config_loader import ConfigLoader
 from common.factory import MetricFactory
 from common.metric_base import BaseMetric, MetricConfig
 
-from app.metrics.block_latency import EthereumBlockLatencyMetric
+from app.metrics.block_latency import WsBlockLatencyMetric
 from app.metrics.eth_call_latency import EthCallLatencyMetric
-from app.metrics.http_call_latency import HttpCallLatencyMetric
+from app.metrics.method_call_latency import HttpBlockNumberLatencyMetric, HttpGasPriceLatencyMetric
 
 
 
@@ -23,9 +23,16 @@ SECRETS_PATH = "app/secrets/secrets.json"
 MetricFactory.register(
     {
         "Ethereum": [
-            (EthereumBlockLatencyMetric, "ws_block_reception_latency_seconds"),
-            (EthCallLatencyMetric, "http_request_latency_seconds"),
-            (HttpCallLatencyMetric, "http_request_latency_seconds"),
+            (WsBlockLatencyMetric, "response_latency_seconds"),
+            (EthCallLatencyMetric, "response_latency_seconds"),
+            (HttpBlockNumberLatencyMetric, "response_latency_seconds"),
+            (HttpGasPriceLatencyMetric, "response_latency_seconds"),
+        ],
+        "Base": [
+            (WsBlockLatencyMetric, "response_latency_seconds"),
+            (EthCallLatencyMetric, "response_latency_seconds"),
+            (HttpBlockNumberLatencyMetric, "response_latency_seconds"),
+            (HttpGasPriceLatencyMetric, "response_latency_seconds"),
         ]
     }
 )

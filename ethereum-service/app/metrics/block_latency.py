@@ -10,7 +10,7 @@ from common.metric_base import WebSocketMetric, MetricConfig, MetricLabels, Metr
 
 logging.basicConfig(level=logging.INFO)
 
-class EthereumBlockLatencyMetric(WebSocketMetric):
+class WsBlockLatencyMetric(WebSocketMetric):
     """
     Collects block latency for Ethereum providers with a persistent WebSocket connection.
     Inherits from WebSocketMetric to handle reconnection, retries, and infinite loop.
@@ -27,6 +27,8 @@ class EthereumBlockLatencyMetric(WebSocketMetric):
         )
         
         self.last_block_hash = None
+
+        self.labels.update_label(MetricLabelKey.API_METHOD, "eth_subscribe")
 
     async def connect(self):
         """

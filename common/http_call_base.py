@@ -7,16 +7,20 @@ from common.metric_base import HttpMetric, MetricLabels, MetricConfig, MetricLab
 
 
 
-
 logging.basicConfig(level=logging.INFO)
 
-class HttpCallLatencyMetric(HttpMetric):
+class HttpCallLatencyMetricBase(HttpMetric):
     """
-    Collects call latency for HTTP-based Ethereum endpoints.
-    Inherits from HttpMetric for common behavior and handling.
+    Base class for HTTP-based Ethereum endpoint latency metrics.
+    Subclasses will specify the JSON-RPC method and its parameters.
     """
 
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, method: str, method_params: dict = None, **kwargs):
+        """
+        Initialize the base class with the necessary configuration.
+        
+        :param method_params: Additional parameters to pass to the JSON-RPC method.
+        """
         http_endpoint = kwargs.get("http_endpoint")
 
         super().__init__(
@@ -26,24 +30,28 @@ class HttpCallLatencyMetric(HttpMetric):
             http_endpoint=http_endpoint
         )
 
-        self.labels.update_label(MetricLabelKey.API_METHOD, "eth_blockNumber")
+        self.method = method
+        self.method_params = method_params or {}
+        self.labels.update_label(MetricLabelKey.API_METHOD, method)
 
     async def fetch_data(self):
         """
-        Perform the HTTP request and return the response time.
+        Perform the HTTP request and return the response time for the specified method.
         """
         try:
             async with aiohttp.ClientSession() as session:
                 start_time = time.monotonic()
+                request_data = {
+                    "id": 1,
+                    "jsonrpc": "2.0",
+                    "method": self.method,
+                    "params": self.method_params
+                }
                 async with session.post(
                     self.http_endpoint,
                     headers={"Accept": "application/json", "Content-Type": "application/json"},
-                    json={
-                        "id": 1,
-                        "jsonrpc": "2.0",
-                        "method": "eth_blockNumber"
-                    },
-                    timeout=self.config.timeout  # Use the config timeout
+                    json=request_data,
+                    timeout=self.config.timeout
                 ) as response:
                     if response.status == 200:
                         await response.json()
