@@ -14,7 +14,7 @@ class HttpBlockNumberLatencyMetric(HttpCallLatencyMetricBase):
             labels=labels,
             config=config,
             method="eth_blockNumber",
-            method_params={},
+            method_params=None,
             **kwargs
         )
 
@@ -29,6 +29,6 @@ class HttpGasPriceLatencyMetric(HttpCallLatencyMetricBase):
             labels=labels,
             config=config,
             method="eth_gasPrice",
-            method_params={},
+            method_params=None,
             **kwargs
         )
