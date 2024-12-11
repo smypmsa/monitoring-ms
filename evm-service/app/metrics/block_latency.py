@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 
 class WsBlockLatencyMetric(WebSocketMetric):
     """
-    Collects block latency for Ethereum providers with a persistent WebSocket connection.
+    Collects block latency for providers with a persistent WebSocket connection.
     Inherits from WebSocketMetric to handle reconnection, retries, and infinite loop.
     """
 
@@ -50,7 +50,7 @@ class WsBlockLatencyMetric(WebSocketMetric):
 
     async def subscribe(self, websocket):
         """
-        Subscribe to the newHeads event on the Ethereum WebSocket endpoint.
+        Subscribe to the newHeads event on the WebSocket endpoint.
         """
         try:
             subscription_msg = json.dumps({

@@ -65,7 +65,6 @@ async def collect_metrics(provider, source_region, timeout, interval, extra_para
 async def main():
     """Launch metric collection tasks for all providers."""
     config = ConfigLoader.load_config(CONFIG_PATH)
-    secrets = ConfigLoader.load_secrets(SECRETS_PATH)
 
     tasks = [
         collect_metrics(
@@ -74,8 +73,7 @@ async def main():
             config.get("timeout", 50),
             config.get("interval", 60),
             extra_params={
-                'tx_data': provider.get('data'),
-                'private_key': secrets.get(provider.get('data', {}).get('secret_index'))
+                'tx_data': provider.get('data')
             })
         for provider in config["providers"]
     ]

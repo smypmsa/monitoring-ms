@@ -12,11 +12,11 @@ volumes:
   prometheus-data: null
 
 services:
-  ethereum-service:
+  evm-service:
     build:
       context: .
-      dockerfile: ethereum-service/Dockerfile
-    container_name: ethereum-service
+      dockerfile: evm-service/Dockerfile
+    container_name: evm-service
     environment:
       - PYTHONUNBUFFERED=1
     networks:

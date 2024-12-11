@@ -9,7 +9,7 @@ from app.services.base_service import BaseService
 
 CONFIG_PATH = "app/config/endpoints.json"
 
-class EthereumService(BaseService):
+class EVMService(BaseService):
     """
     Service to interact with the Ethereum metrics endpoint.
     """

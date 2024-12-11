@@ -4,6 +4,9 @@ import logging
 
 from common.metric_base import HttpMetric, MetricLabels, MetricConfig, MetricLabelKey
 
+
+
+
 logging.basicConfig(level=logging.INFO)
 
 class HttpCallLatencyMetricBase(HttpMetric):
@@ -60,10 +63,9 @@ class HttpCallLatencyMetricBase(HttpMetric):
                         return latency
                     
                     else:
-                        raise ValueError(f"Unexpected status code: {response.status}")
+                        raise ValueError(f"Unexpected status code: {response.status}. Error {e}")
                     
         except Exception as e:
-            logging.error(f"Error collecting HTTP call latency for {self.labels.get_label(MetricLabelKey.PROVIDER)}: {e}")
             raise
 
     def process_data(self, value):
