@@ -38,6 +38,6 @@ services:
     ports:
       - "443:443"  # Exposing HTTPS port
     volumes:
-      - ./ssl-certs/server.crt:/etc/ssl/certs/cert.crt
-      - ./ssl-certs/server.key:/etc/ssl/private/cert.key
+      - ./ssl-certs/cert.crt:/etc/ssl/certs/cert.crt
+      - ./ssl-certs/cert.key:/etc/ssl/private/cert.key
     command: uvicorn app.main:app --host 0.0.0.0 --port 443 --ssl-keyfile /etc/ssl/private/cert.key --ssl-certfile /etc/ssl/certs/cert.crt

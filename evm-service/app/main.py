@@ -17,7 +17,7 @@ from app.metrics.method_call_latency import HttpBlockNumberLatencyMetric, HttpGa
 
 
 
-logging.basicConfig(level=logging.ERROR, stream=sys.stdout) 
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout) 
 
 CONFIG_PATH = "app/config/endpoints.json"
 SECRETS_PATH = "app/secrets/secrets.json"
