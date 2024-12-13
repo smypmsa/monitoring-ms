@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from dotenv import load_dotenv
 
@@ -25,6 +26,6 @@ def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
 
     return credentials.username
 
-@app.get("/metrics")
+@app.get("/metrics", response_class=PlainTextResponse)
 async def get_metrics(username: str = Depends(verify_credentials)):
     return await metrics.get_metrics()
