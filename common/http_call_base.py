@@ -63,7 +63,7 @@ class HttpCallLatencyMetricBase(HttpMetric):
                         return latency
                     
                     else:
-                        raise ValueError(f"Unexpected status code: {response.status}. Error {e}")
+                        raise ValueError(f"Unexpected status code: {response.status}.")
                     
         except Exception as e:
             raise
