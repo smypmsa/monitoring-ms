@@ -45,14 +45,10 @@ services:
       - monitoring_network
     volumes:
       - prometheus-data:/prometheus
-      - /etc/letsencrypt:/etc/letsencrypt:ro
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./web.yml:/etc/prometheus/web.yml:ro
     env_file:
       - .env
     ports:
       - "9090:9090"
     logging: *default-logging
-    command:
-      - "--web.config.file=/etc/prometheus/web.yml"
     restart: always
