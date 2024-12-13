@@ -29,7 +29,7 @@ class MetricConfig:
         extra_params (Dict[str, Any]): Extra parameters for the metric.
     """
 
-    def __init__(self, timeout: int, interval: int, retry_interval: int = 15, extra_params: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, timeout: int, interval: int, retry_interval: int = 30, extra_params: Optional[Dict[str, Any]] = None) -> None:
         self.timeout = timeout
         self.interval = interval
         self.retry_interval = retry_interval

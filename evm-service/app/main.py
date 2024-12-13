@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import sys
+
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from contextlib import asynccontextmanager
@@ -15,7 +17,7 @@ from app.metrics.method_call_latency import HttpBlockNumberLatencyMetric, HttpGa
 
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR, stream=sys.stdout) 
 
 CONFIG_PATH = "app/config/endpoints.json"
 SECRETS_PATH = "app/secrets/secrets.json"

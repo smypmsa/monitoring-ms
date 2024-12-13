@@ -46,8 +46,6 @@ class EthCallLatencyMetric(HttpMetric):
 
             start_time = time.monotonic()
             response = await self.simulate_transaction(web3, self.data)
-            #balance = int.from_bytes(response, byteorder='big')
-            #logging.info(f"Decoded balance: {balance}")
             end_time = time.monotonic()
 
             if response is None:
@@ -57,17 +55,16 @@ class EthCallLatencyMetric(HttpMetric):
             return latency
 
         except Exception as e:
-            logging.error(f"Error collecting eth_call latency for {self.labels.get_label(MetricLabelKey.PROVIDER)}: {e}")
+            logging.error(f"Error collecting eth_call latency for {self.labels.get_label(MetricLabelKey.PROVIDER)} {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}: {e}")
             raise
 
     async def simulate_transaction(self, web3: Web3, transaction_data):
         """Simulate the transaction using eth_call and return the result."""
         try:
-            # Construct the call parameters
             call_params = {
+                'from': self.from_address,
                 'to': self.to_address,
-                'data': transaction_data,
-                'from': self.from_address
+                'data': transaction_data
             }
 
             result = await asyncio.to_thread(web3.eth.call, call_params, 'latest')
