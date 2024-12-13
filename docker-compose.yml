@@ -21,7 +21,6 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - monitoring_network
-    logging: *default-logging
 
   api-gateway:
     build:
@@ -32,12 +31,9 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - monitoring_network
-    logging: *default-logging
     env_file:
       - .env
     ports:
-      - "443:443"  # Exposing HTTPS port
+      - "443:443"
     volumes:
-      - ./ssl-certs/cert.crt:/etc/ssl/certs/cert.crt
-      - ./ssl-certs/cert.key:/etc/ssl/private/cert.key
-    command: uvicorn app.main:app --host 0.0.0.0 --port 443 --ssl-keyfile /etc/ssl/private/cert.key --ssl-certfile /etc/ssl/certs/cert.crt
+      - /etc/letsencrypt:/etc/letsencrypt:ro

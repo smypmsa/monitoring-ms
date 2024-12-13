@@ -14,6 +14,9 @@ from app.metrics.block_latency import WsBlockLatencyMetric
 from app.metrics.eth_call_latency import EthCallLatencyMetric
 from app.metrics.method_call_latency import HttpBlockNumberLatencyMetric, HttpGasPriceLatencyMetric
 
+
+
+
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout) 
 
 CONFIG_PATH = "app/config/endpoints.json"
