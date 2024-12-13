@@ -1,0 +1,6 @@
+basic_auth_users:
+    admin: ${PROMETHEUS_PASSWORD}
+
+tls_server_config:
+  cert_file: /etc/letsencrypt/live/intelautoconsult.com/fullchain.pem
+  key_file: /etc/letsencrypt/live/intelautoconsult.com/privkey.pem

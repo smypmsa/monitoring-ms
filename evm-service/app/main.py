@@ -95,9 +95,4 @@ app = FastAPI(lifespan=lifespan)
 async def get_metrics():
     """Expose metrics in Prometheus-compatible format."""
     all_metrics = BaseMetric.get_all_latest_values()
-
-    help_line = "# HELP response_latency_seconds Description of response_latency_seconds"
-    type_line = "# TYPE response_latency_seconds gauge"
-    prometheus_output = "\n".join([help_line, type_line] + all_metrics)
-
-    return prometheus_output
+    return "\n".join(all_metrics)

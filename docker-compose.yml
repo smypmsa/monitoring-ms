@@ -9,7 +9,7 @@ networks:
     driver: bridge
 
 volumes:
-  prometheus-data: null
+  prometheus-data:
 
 services:
   evm-service:
@@ -21,6 +21,8 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - monitoring_network
+    logging: *default-logging
+    restart: always
 
   api-gateway:
     build:
@@ -33,7 +35,24 @@ services:
       - monitoring_network
     env_file:
       - .env
-    ports:
-      - "443:443"
+    logging: *default-logging
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    networks:
+      - monitoring_network
     volumes:
+      - prometheus-data:/prometheus
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./web.yml:/etc/prometheus/web.yml:ro
+    env_file:
+      - .env
+    ports:
+      - "9090:9090"
+    logging: *default-logging
+    command:
+      - "--web.config.file=/etc/prometheus/web.yml"
+    restart: always
