@@ -10,4 +10,4 @@ COPY common ./common
 
 ENV PYTHONPATH="/app"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--ssl-keyfile", "/etc/letsencrypt/live/intelautoconsult.com/privkey.pem", "--ssl-certfile", "/etc/letsencrypt/live/intelautoconsult.com/fullchain.pem"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "443", "--ssl-keyfile", "/etc/letsencrypt/live/intelautoconsult.com/privkey.pem", "--ssl-certfile", "/etc/letsencrypt/live/intelautoconsult.com/fullchain.pem"]
