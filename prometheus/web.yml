@@ -1,2 +1,2 @@
 basic_auth_users:
-    admin: ${PROMETHEUS_PASSWORD}
+    admin: $2b$12$PNn0/UZyjgXvD82rmnBnRupKv0hSqpgKaN/035fGglOI6kfTKeLtu
