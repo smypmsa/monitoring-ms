@@ -32,18 +32,8 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - monitoring_network
-    logging: *default-logging
-
-  prometheus:
-    image: prom/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.retention.time=7d'
     ports:
-      - "9090:9090"
-    volumes:
-      - prometheus-data:/prometheus
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    networks:
-      - monitoring_network
+      - "8000:8000"
     logging: *default-logging
+    env_file:
+      - .env

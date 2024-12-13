@@ -186,7 +186,7 @@ class BaseMetric(ABC):
     async def update_metric_value(self, value: Union[int, float]) -> None:
         """Updates the latest value of the metric."""
         self.latest_value = value
-        logging.info(self.get_prometheus_format())
+        logging.debug(self.get_prometheus_format())
 
     async def handle_error(self, error: Exception) -> None:
         """Handles errors by updating the status and retrying after a delay."""
