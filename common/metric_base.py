@@ -1,10 +1,13 @@
 import logging
 import asyncio
 import uuid
+import time
 
 from enum import Enum
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
+
+import websockets
 
 
 
@@ -187,7 +190,7 @@ class BaseMetric(ABC):
         """Updates the latest value of the metric."""
         self.latest_value = value
         self.labels.update_label(MetricLabelKey.RESPONSE_STATUS, "success")
-        logging.debug(self.get_prometheus_format())
+        logging.info(self.get_prometheus_format())
 
     async def handle_error(self, error: Exception) -> None:
         """Handles errors by updating the status and retrying after a delay."""
@@ -201,15 +204,38 @@ class WebSocketMetric(BaseMetric):
     """
     WebSocket-based metric for collecting data from a WebSocket connection.
     """
+    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig,
+                 ws_endpoint: Optional[str] = None, http_endpoint: Optional[str] = None) -> None:
+        super().__init__(metric_name, labels, config, ws_endpoint, http_endpoint)
+        self.last_block_hash: Optional[str] = None
+        self.subscription_id: Optional[int] = None
+        self.last_value_timestamp = None
 
-    @abstractmethod
     async def connect(self) -> Any:
-        """Connects to the WebSocket."""
-        pass
+        """
+        Establish WebSocket connection.
+        """
+        try:
+            websocket = await websockets.connect(
+                self.ws_endpoint,
+                ping_timeout=self.config.timeout,
+                close_timeout=self.config.timeout
+            )
+            logging.info(f"Connected to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
+            return websocket
+        
+        except Exception as e:
+            logging.error(f"Error connecting to WebSocket: {str(e)}")
+            raise
 
     @abstractmethod
     async def subscribe(self, websocket: Any) -> None:
         """Subscribes to WebSocket messages."""
+        pass
+
+    @abstractmethod
+    async def unsubscribe(self, websocket: Any) -> None:
+        """Unsubscribe from WebSocket subscription."""
         pass
 
     @abstractmethod
@@ -225,9 +251,25 @@ class WebSocketMetric(BaseMetric):
                 await self.subscribe(websocket)
 
                 while True:
-                    if data := await self.listen_for_data(websocket):
+                    data = await self.listen_for_data(websocket)
+
+                    if data:
                         value = self.process_data(data)
                         await self.update_metric_value(value)
+
+                        now = time.time()
+                        if self.last_value_timestamp is not None:
+                            elapsed = now - self.last_value_timestamp
+
+                            # If we received a block too soon (less than half the interval), unsubscribe and close
+                            if elapsed < (self.config.interval / 2):
+                                await self.unsubscribe(websocket)
+                                await websocket.close()
+                                logging.info(f"Unsubscribed and closed connection to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
+                                await asyncio.sleep(self.config.interval - elapsed)
+                                break
+
+                        self.last_value_timestamp = now
 
             except Exception as e:
                 await self.handle_error(e)

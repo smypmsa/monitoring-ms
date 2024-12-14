@@ -17,10 +17,9 @@ from app.metrics.method_call_latency import HttpBlockNumberLatencyMetric, HttpGa
 
 
 
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout) 
+logging.basicConfig(level=logging.INFO, stream=sys.stdout) 
 
 CONFIG_PATH = "app/config/endpoints.json"
-SECRETS_PATH = "app/secrets/secrets.json"
 
 MetricFactory.register(
     {
@@ -40,7 +39,6 @@ MetricFactory.register(
 )
 
 async def collect_metrics(provider, source_region, timeout, interval, extra_params: dict):
-    """Collect metrics for both WebSocket and HTTP endpoints."""
     logging.debug(f"Starting metrics collection for provider: {provider['name']}")
 
     try:
@@ -65,7 +63,6 @@ async def collect_metrics(provider, source_region, timeout, interval, extra_para
 
 
 async def main():
-    """Launch metric collection tasks for all providers."""
     config = ConfigLoader.load_config(CONFIG_PATH)
 
     tasks = [

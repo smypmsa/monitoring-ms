@@ -22,17 +22,14 @@ class HttpCallLatencyMetricBase(HttpMetric):
         :param method_params: Additional parameters to pass to the JSON-RPC method (optional).
         """
         http_endpoint = kwargs.get("http_endpoint")
-
         super().__init__(
             metric_name=metric_name,
             labels=labels,
             config=config,
             http_endpoint=http_endpoint
         )
-
         self.method = method
-        # If method_params is not passed, leave it as an empty dictionary.
-        self.method_params = method_params or None  # Ensure it is None if not passed
+        self.method_params = method_params or None
         self.labels.update_label(MetricLabelKey.API_METHOD, method)
 
     async def fetch_data(self):

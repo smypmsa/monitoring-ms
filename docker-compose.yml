@@ -24,17 +24,15 @@ services:
     logging: *default-logging
     restart: always
 
-  api-gateway:
+  solana-service:
     build:
       context: .
-      dockerfile: api-gateway/Dockerfile
-    container_name: api-gateway
+      dockerfile: solana-service/Dockerfile
+    container_name: solana-service
     environment:
       - PYTHONUNBUFFERED=1
     networks:
       - monitoring_network
-    env_file:
-      - .env
     logging: *default-logging
     restart: always
 

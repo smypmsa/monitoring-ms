@@ -18,35 +18,13 @@ class WsBlockLatencyMetric(WebSocketMetric):
 
     def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
         ws_endpoint = kwargs.pop("ws_endpoint", None)
-
         super().__init__(
             metric_name=metric_name,
             labels=labels,
             config=config,
             ws_endpoint=ws_endpoint
         )
-        
-        self.last_block_hash = None
-
         self.labels.update_label(MetricLabelKey.API_METHOD, "eth_subscribe")
-
-    async def connect(self):
-        """
-        Establish WebSocket connection and handle subscription to the newHeads event.
-        """
-        try:
-            websocket = await websockets.connect(
-                self.ws_endpoint,
-                ping_timeout=self.config.timeout,
-                close_timeout=self.config.timeout
-            )
-            await self.subscribe(websocket)
-            logging.debug(f"Connected to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
-            return websocket
-        
-        except Exception as e:
-            logging.error(f"Error connecting to WebSocket: {str(e)}")
-            raise
 
     async def subscribe(self, websocket):
         """
@@ -65,27 +43,14 @@ class WsBlockLatencyMetric(WebSocketMetric):
 
             if subscription_data.get("result") is None:
                 raise ValueError("Subscription to newHeads failed")
-            
-            logging.debug("Successfully subscribed to 'newHeads' event.")
 
         except Exception as e:
             logging.error(f"Error subscribing to newHeads: {str(e)}")
             raise
 
-    def process_data(self, block):
-        """
-        Calculate block latency in seconds.
-        """
-        try:
-            block_timestamp = int(block.get("timestamp", "0x0"), 16)
-            block_time = datetime.fromtimestamp(block_timestamp, timezone.utc)
-            current_time = datetime.now(timezone.utc)
-            latency = (current_time - block_time).total_seconds()
-            return latency
-        
-        except ValueError as e:
-            logging.error(f"Invalid timestamp received: {str(e)}")
-            raise
+    async def unsubscribe(self, websocket):
+        # EVM blockchains have no unsubscribe logic; do nothing.
+        pass
 
     async def listen_for_data(self, websocket):
         """
@@ -103,6 +68,7 @@ class WsBlockLatencyMetric(WebSocketMetric):
                 if block_hash != self.last_block_hash:
                     self.last_block_hash = block_hash
                     return block
+                
                 else:
                     logging.debug(f"Duplicate block detected: {block_hash}, skipping...")
                     return None
@@ -110,5 +76,20 @@ class WsBlockLatencyMetric(WebSocketMetric):
             return None
         
         except Exception as e:
-            logging.error(f"Error receiving or processing data: {str(e)}")
+            logging.error(f"Error receiving data: {str(e)}")
+            raise
+
+    def process_data(self, block):
+        """
+        Calculate block latency in seconds.
+        """
+        try:
+            block_timestamp = int(block.get("timestamp", "0x0"), 16)
+            block_time = datetime.fromtimestamp(block_timestamp, timezone.utc)
+            current_time = datetime.now(timezone.utc)
+            latency = (current_time - block_time).total_seconds()
+            return latency
+        
+        except ValueError as e:
+            logging.error(f"Invalid timestamp received: {str(e)}")
             raise

@@ -10,4 +10,4 @@ COPY common ./common
 
 ENV PYTHONPATH="/app"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
