@@ -1,24 +1,29 @@
+import asyncio
 import logging
 import time
 from abc import abstractmethod
-from typing import Any, Optional 
+from typing import Any, Optional
 
-import asyncio
 import aiohttp
 import websockets
 
 from common.base_metric import BaseMetric
-from common.metric_config import MetricConfig, MetricLabels, MetricLabelKey
-
-
+from common.metric_config import MetricConfig, MetricLabelKey, MetricLabels
 
 
 class WebSocketMetric(BaseMetric):
     """
     WebSocket-based metric for collecting data from a WebSocket connection.
     """
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig,
-                 ws_endpoint: Optional[str] = None, http_endpoint: Optional[str] = None) -> None:
+
+    def __init__(
+        self,
+        metric_name: str,
+        labels: MetricLabels,
+        config: MetricConfig,
+        ws_endpoint: Optional[str] = None,
+        http_endpoint: Optional[str] = None,
+    ) -> None:
         super().__init__(metric_name, labels, config, ws_endpoint, http_endpoint)
         self.last_block_hash: Optional[str] = None
         self.subscription_id: Optional[int] = None
@@ -47,11 +52,13 @@ class WebSocketMetric(BaseMetric):
             websocket = await websockets.connect(
                 self.ws_endpoint,
                 ping_timeout=self.config.timeout,
-                close_timeout=self.config.timeout
+                close_timeout=self.config.timeout,
             )
-            logging.debug(f"Connected to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
+            logging.debug(
+                f"Connected to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}"
+            )
             return websocket
-        
+
         except Exception as e:
             logging.error(f"Error connecting to WebSocket: {str(e)}")
             raise
@@ -63,16 +70,16 @@ class WebSocketMetric(BaseMetric):
             try:
                 websocket = await self.connect()
                 await self.subscribe(websocket)
-                
+
                 # Wait for single message
                 data = await self.listen_for_data(websocket)
                 if data:
                     value = self.process_data(data)
                     await self.update_metric_value(value)
-                    
+
             except Exception as e:
                 await self.handle_error(e)
-                
+
             finally:
                 if websocket:
                     try:
@@ -80,7 +87,7 @@ class WebSocketMetric(BaseMetric):
                         await websocket.close()
                     except Exception as e:
                         logging.error(f"Error closing websocket: {str(e)}")
-                        
+
                 await asyncio.sleep(self.config.interval)
 
 
@@ -113,10 +120,18 @@ class HttpCallLatencyMetricBase(HttpMetric):
     Subclasses will specify the JSON-RPC method and its parameters.
     """
 
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, method: str, method_params: dict = None, **kwargs):
+    def __init__(
+        self,
+        metric_name: str,
+        labels: MetricLabels,
+        config: MetricConfig,
+        method: str,
+        method_params: dict = None,
+        **kwargs,
+    ):
         """
         Initialize the base class with the necessary configuration.
-        
+
         :param method_params: Additional parameters to pass to the JSON-RPC method (optional).
         """
         http_endpoint = kwargs.get("http_endpoint")
@@ -124,7 +139,7 @@ class HttpCallLatencyMetricBase(HttpMetric):
             metric_name=metric_name,
             labels=labels,
             config=config,
-            http_endpoint=http_endpoint
+            http_endpoint=http_endpoint,
         )
         self.method = method
         self.method_params = method_params or None
@@ -136,7 +151,7 @@ class HttpCallLatencyMetricBase(HttpMetric):
         """
         async with aiohttp.ClientSession() as session:
             start_time = time.monotonic()
-                
+
             request_data = {
                 "id": 1,
                 "jsonrpc": "2.0",
@@ -147,17 +162,20 @@ class HttpCallLatencyMetricBase(HttpMetric):
 
             async with session.post(
                 self.http_endpoint,
-                headers={"Accept": "application/json", "Content-Type": "application/json"},
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
                 json=request_data,
-                timeout=self.config.timeout
+                timeout=self.config.timeout,
             ) as response:
                 if response.status == 200:
                     await response.json()
                     latency = time.monotonic() - start_time
                     return latency
-                    
+
                 else:
                     raise ValueError(f"Unexpected status code: {response.status}.")
-                    
+
     def process_data(self, value):
         return value

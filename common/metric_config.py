@@ -1,9 +1,6 @@
 import logging
-
 from enum import Enum
 from typing import Any, Dict, Optional
-
-
 
 
 class MetricLabelKey(Enum):
@@ -26,7 +23,13 @@ class MetricConfig:
         extra_params (Dict[str, Any]): Extra parameters for the metric.
     """
 
-    def __init__(self, timeout: int, interval: int, retry_interval: int = 30, extra_params: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        timeout: int,
+        interval: int,
+        retry_interval: int = 30,
+        extra_params: Optional[Dict[str, Any]] = None,
+    ) -> None:
         self.timeout = timeout
         self.interval = interval
         self.retry_interval = retry_interval
@@ -44,7 +47,9 @@ class MetricLabel:
 
     def __init__(self, key: MetricLabelKey, value: str) -> None:
         if not isinstance(key, MetricLabelKey):
-            raise ValueError(f"Invalid key, must be an instance of MetricLabelKey Enum: {key}")
+            raise ValueError(
+                f"Invalid key, must be an instance of MetricLabelKey Enum: {key}"
+            )
         self.key = key
         self.value = value
 
@@ -57,14 +62,22 @@ class MetricLabels:
         labels (List[MetricLabel]): A list of MetricLabel instances.
     """
 
-    def __init__(self, source_region: str, target_region: str, blockchain: str, provider: str, api_method: str = "default", response_status: str = "success") -> None:
+    def __init__(
+        self,
+        source_region: str,
+        target_region: str,
+        blockchain: str,
+        provider: str,
+        api_method: str = "default",
+        response_status: str = "success",
+    ) -> None:
         self.labels = [
             MetricLabel(MetricLabelKey.SOURCE_REGION, source_region),
             MetricLabel(MetricLabelKey.TARGET_REGION, target_region),
             MetricLabel(MetricLabelKey.BLOCKCHAIN, blockchain),
             MetricLabel(MetricLabelKey.PROVIDER, provider),
             MetricLabel(MetricLabelKey.API_METHOD, api_method),
-            MetricLabel(MetricLabelKey.RESPONSE_STATUS, response_status)
+            MetricLabel(MetricLabelKey.RESPONSE_STATUS, response_status),
         ]
 
     def get_prometheus_labels(self) -> str:
@@ -89,7 +102,7 @@ class MetricLabels:
                 label.value = new_value
                 logging.debug(f"Updated label '{label_name.value}' to '{new_value}'")
                 return
-            
+
         logging.warning(f"Label '{label_name.value}' not found!")
 
     def add_label(self, label_name: MetricLabelKey, label_value: str) -> None:
@@ -102,7 +115,9 @@ class MetricLabels:
         """
         for label in self.labels:
             if label.key == label_name:
-                logging.info(f"Label '{label_name.value}' already exists, updating its value.")
+                logging.info(
+                    f"Label '{label_name.value}' already exists, updating its value."
+                )
                 self.update_label(label_name, label_value)
                 return
 
@@ -122,5 +137,5 @@ class MetricLabels:
         for label in self.labels:
             if label.key == label_name:
                 return label.value
-            
+
         return None

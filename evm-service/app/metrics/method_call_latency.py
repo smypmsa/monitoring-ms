@@ -1,14 +1,15 @@
-from common.metric_types import HttpCallLatencyMetricBase
 from common.metric_config import MetricConfig, MetricLabels
-
-
+from common.metric_types import HttpCallLatencyMetricBase
 
 
 class HttpBlockNumberLatencyMetric(HttpCallLatencyMetricBase):
     """
     Collects call latency for the `eth_blockNumber` method.
     """
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+
+    def __init__(
+        self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs
+    ):
         super().__init__(
             metric_name=metric_name,
             labels=labels,
@@ -23,7 +24,10 @@ class HttpGasPriceLatencyMetric(HttpCallLatencyMetricBase):
     """
     Collects call latency for the `eth_gasPrice` method.
     """
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+
+    def __init__(
+        self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs
+    ):
         super().__init__(
             metric_name=metric_name,
             labels=labels,

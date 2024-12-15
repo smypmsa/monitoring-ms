@@ -1,12 +1,9 @@
 import logging
 import uuid
-
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Union
 
-from common.metric_config import MetricLabels, MetricConfig, MetricLabelKey
-
-
+from common.metric_config import MetricConfig, MetricLabelKey, MetricLabels
 
 
 class BaseMetric(ABC):
@@ -20,11 +17,20 @@ class BaseMetric(ABC):
         latest_value (Optional[Union[int, float]]): The latest value of the metric.
         endpoint (str): The endpoint (either HTTP or WebSocket) for collecting the metric.
     """
+
     _instances: List["BaseMetric"] = []
 
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, 
-                 ws_endpoint: Optional[str] = None, http_endpoint: Optional[str] = None) -> None:
-        self.metric_id = str(uuid.uuid4())  # Generate a unique ID for each metric instance
+    def __init__(
+        self,
+        metric_name: str,
+        labels: MetricLabels,
+        config: MetricConfig,
+        ws_endpoint: Optional[str] = None,
+        http_endpoint: Optional[str] = None,
+    ) -> None:
+        self.metric_id = str(
+            uuid.uuid4()
+        )  # Generate a unique ID for each metric instance
         self.metric_name = metric_name
         self.labels = labels
         self.config = config
@@ -42,8 +48,8 @@ class BaseMetric(ABC):
     def get_all_latest_values(cls) -> List[str]:
         """Returns all latest values in Prometheus format."""
         return [
-            instance.get_prometheus_format() 
-            for instance in cls._instances 
+            instance.get_prometheus_format()
+            for instance in cls._instances
             if instance.latest_value is not None
         ]
 
@@ -61,7 +67,7 @@ class BaseMetric(ABC):
         """Formats the metric for Prometheus."""
         if self.latest_value is None:
             raise ValueError("Metric value is not set")
-        return f'{self.metric_name}{{{self.labels.get_prometheus_labels()}}} {self.latest_value}'
+        return f"{self.metric_name}{{{self.labels.get_prometheus_labels()}}} {self.latest_value}"
 
     async def update_metric_value(self, value: Union[int, float]) -> None:
         """Updates the latest value of the metric."""

@@ -2,13 +2,9 @@ import json
 import logging
 from datetime import datetime, timezone
 
+from common.metric_config import MetricConfig, MetricLabelKey, MetricLabels
 from common.metric_types import WebSocketMetric
-from common.metric_config import MetricConfig, MetricLabels, MetricLabelKey
 
-
-
-
-logging.basicConfig(level=logging.INFO)
 
 class WsBlockLatencyMetric(WebSocketMetric):
     """
@@ -16,13 +12,15 @@ class WsBlockLatencyMetric(WebSocketMetric):
     Inherits from WebSocketMetric to handle reconnection, retries, and infinite loop.
     """
 
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+    def __init__(
+        self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs
+    ):
         ws_endpoint = kwargs.pop("ws_endpoint", None)
         super().__init__(
             metric_name=metric_name,
             labels=labels,
             config=config,
-            ws_endpoint=ws_endpoint
+            ws_endpoint=ws_endpoint,
         )
         self.labels.update_label(MetricLabelKey.API_METHOD, "eth_subscribe")
 
@@ -31,12 +29,14 @@ class WsBlockLatencyMetric(WebSocketMetric):
         Subscribe to the newHeads event on the WebSocket endpoint.
         """
         try:
-            subscription_msg = json.dumps({
-                "id": 1,
-                "jsonrpc": "2.0",
-                "method": "eth_subscribe",
-                "params": ["newHeads"]
-            })
+            subscription_msg = json.dumps(
+                {
+                    "id": 1,
+                    "jsonrpc": "2.0",
+                    "method": "eth_subscribe",
+                    "params": ["newHeads"],
+                }
+            )
             await websocket.send(subscription_msg)
             response = await websocket.recv()
             subscription_data = json.loads(response)
@@ -68,13 +68,15 @@ class WsBlockLatencyMetric(WebSocketMetric):
                 if block_hash != self.last_block_hash:
                     self.last_block_hash = block_hash
                     return block
-                
+
                 else:
-                    logging.debug(f"Duplicate block detected: {block_hash}, skipping...")
+                    logging.debug(
+                        f"Duplicate block detected: {block_hash}, skipping..."
+                    )
                     return None
-            
+
             return None
-        
+
         except Exception as e:
             logging.error(f"Error receiving data: {str(e)}")
             raise
@@ -89,7 +91,7 @@ class WsBlockLatencyMetric(WebSocketMetric):
             current_time = datetime.now(timezone.utc)
             latency = (current_time - block_time).total_seconds()
             return latency
-        
+
         except ValueError as e:
             logging.error(f"Invalid timestamp received: {str(e)}")
             raise

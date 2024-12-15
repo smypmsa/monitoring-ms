@@ -1,11 +1,11 @@
-from common.metric_types import HttpCallLatencyMetricBase
 from common.metric_config import MetricConfig, MetricLabels
-
-
+from common.metric_types import HttpCallLatencyMetricBase
 
 
 class HttpGetConsensusBlockLatency(HttpCallLatencyMetricBase):
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+    def __init__(
+        self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs
+    ):
         super().__init__(
             metric_name=metric_name,
             labels=labels,
@@ -16,7 +16,9 @@ class HttpGetConsensusBlockLatency(HttpCallLatencyMetricBase):
 
 
 class HttpGetBlockHeaderLatency(HttpCallLatencyMetricBase):
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+    def __init__(
+        self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs
+    ):
         super().__init__(
             metric_name=metric_name,
             labels=labels,
@@ -25,14 +27,16 @@ class HttpGetBlockHeaderLatency(HttpCallLatencyMetricBase):
             method_params={
                 "workchain": -1,
                 "shard": "-9223372036854775808",
-                "seqno": 39064874
+                "seqno": 39064874,
             },
             **kwargs
         )
 
 
 class HttpRunGetMethodLatency(HttpCallLatencyMetricBase):
-    def __init__(self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs):
+    def __init__(
+        self, metric_name: str, labels: MetricLabels, config: MetricConfig, **kwargs
+    ):
         super().__init__(
             metric_name=metric_name,
             labels=labels,
@@ -43,10 +47,10 @@ class HttpRunGetMethodLatency(HttpCallLatencyMetricBase):
                 "method": "get_wallet_address",
                 "stack": [
                     [
-                    "tvm.Slice",
-                    "te6cckEBAQEAJAAAQ4AbUzrTQYTUv8s/I9ds2TSZgRjyrgl2S2LKcZMEFcxj6PARy3rF"
+                        "tvm.Slice",
+                        "te6cckEBAQEAJAAAQ4AbUzrTQYTUv8s/I9ds2TSZgRjyrgl2S2LKcZMEFcxj6PARy3rF",
                     ]
-                ]
+                ],
             },
             **kwargs
         )
