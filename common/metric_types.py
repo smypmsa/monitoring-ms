@@ -11,6 +11,8 @@ from common.base_metric import BaseMetric
 from common.metric_config import MetricConfig, MetricLabelKey, MetricLabels
 
 
+MAX_LATENCY_SEC = 30
+
 class WebSocketMetric(BaseMetric):
     """
     WebSocket-based metric for collecting data from a WebSocket connection.
@@ -74,8 +76,10 @@ class WebSocketMetric(BaseMetric):
                 # Wait for single message
                 data = await self.listen_for_data(websocket)
                 if data:
-                    value = self.process_data(data)
-                    await self.update_metric_value(value)
+                    latency = self.process_data(data)
+                    if latency > MAX_LATENCY_SEC:
+                        raise ValueError(f"Latency {latency}s exceeds maximum allowed {MAX_LATENCY_SEC}s")
+                    await self.update_metric_value(latency)
 
             except Exception as e:
                 await self.handle_error(e)
@@ -106,8 +110,10 @@ class HttpMetric(BaseMetric):
         while True:
             try:
                 if data := await self.fetch_data():
-                    value = self.process_data(data)
-                    await self.update_metric_value(value)
+                    latency = self.process_data(data)
+                    if latency > MAX_LATENCY_SEC:
+                        raise ValueError(f"Latency {latency}s exceeds maximum allowed {MAX_LATENCY_SEC}s")
+                    await self.update_metric_value(latency)
             except Exception as e:
                 await self.handle_error(e)
             finally:
