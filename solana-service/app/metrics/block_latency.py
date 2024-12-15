@@ -12,7 +12,7 @@ from common.metric_base import WebSocketMetric, MetricConfig, MetricLabels, Metr
 
 logging.basicConfig(level=logging.INFO)
 
-class WsSlotSubscriptionMetric(WebSocketMetric):
+class WsBlockLatencyMetric(WebSocketMetric):
     """
     Collects block latency for providers with a persistent WebSocket connection.
     Inherits from WebSocketMetric to handle reconnection, retries, and infinite loop.

@@ -271,6 +271,7 @@ class WebSocketMetric(BaseMetric):
 
             except Exception as e:
                 await self.handle_error(e)
+                await asyncio.sleep(self.config.interval)
 
 
 class HttpMetric(BaseMetric):
