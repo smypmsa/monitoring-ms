@@ -1,9 +1,14 @@
 import time
-from web3 import Web3
-import asyncio
 import logging
 
-from common.metric_base import HttpMetric, MetricConfig, MetricLabels, MetricLabelKey
+import asyncio
+from web3 import Web3
+
+from common.metric_types import HttpMetric
+from common.metric_config import MetricConfig, MetricLabels, MetricLabelKey
+
+
+
 
 logging.basicConfig(level=logging.INFO)
 

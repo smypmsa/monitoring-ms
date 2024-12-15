@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-from typing import List, Type
 
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
@@ -9,7 +8,8 @@ from contextlib import asynccontextmanager
 
 from common.config_loader import ConfigLoader
 from common.factory import MetricFactory
-from common.metric_base import BaseMetric, MetricConfig
+from common.base_metric import BaseMetric
+from common.metric_config import MetricConfig
 
 
 

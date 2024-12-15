@@ -10,6 +10,7 @@ networks:
 
 volumes:
   prometheus-data:
+  service-logs:
 
 services:
   evm-service:
@@ -65,5 +66,5 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.config.file=/etc/prometheus/web.yml"
-      - "--storage.tsdb.retention.time=180d"
+      - "--storage.tsdb.retention.time=90d"
     restart: always

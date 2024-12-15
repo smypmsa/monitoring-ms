@@ -3,6 +3,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 COPY evm-service/requirements.txt .
+COPY evm-service/endpoints.json .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY evm-service/app ./app

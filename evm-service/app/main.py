@@ -21,7 +21,7 @@ registered_metrics = {
     ]
 }
 
-CONFIG_PATH = "app/config/endpoints.json"
+CONFIG_PATH = "endpoints.json"
 
 app = create_app(CONFIG_PATH, registered_metrics)
 

@@ -1,5 +1,5 @@
-from common.metric_base import MetricLabels, MetricConfig
-from common.http_call_base import HttpCallLatencyMetricBase
+from common.metric_types import HttpCallLatencyMetricBase
+from common.metric_config import MetricConfig, MetricLabels
 
 
 

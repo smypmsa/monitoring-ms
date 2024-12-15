@@ -6,6 +6,7 @@ COPY solana-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY solana-service/app ./app
+COPY solana-service/endpoints.json .
 COPY common ./common
 
 ENV PYTHONPATH="/app"

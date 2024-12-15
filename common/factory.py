@@ -1,5 +1,7 @@
 from typing import List, Type, Tuple, Dict
-from common.metric_base import BaseMetric, MetricConfig, MetricLabels
+
+from common.base_metric import BaseMetric
+from common.metric_config import MetricConfig, MetricLabels
 
 
 

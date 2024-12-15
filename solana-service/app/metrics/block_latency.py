@@ -5,7 +5,8 @@ from typing import Optional, Dict, Any
 
 from websockets.client import WebSocketClientProtocol
 
-from common.metric_base import WebSocketMetric, MetricConfig, MetricLabels, MetricLabelKey
+from common.metric_types import WebSocketMetric
+from common.metric_config import MetricConfig, MetricLabels, MetricLabelKey
 
 
 

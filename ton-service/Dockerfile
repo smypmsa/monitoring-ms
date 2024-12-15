@@ -6,6 +6,7 @@ COPY ton-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ton-service/app ./app
+COPY ton-service/endpoints.json .
 COPY common ./common
 
 ENV PYTHONPATH="/app"

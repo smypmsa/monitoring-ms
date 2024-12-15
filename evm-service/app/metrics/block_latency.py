@@ -1,9 +1,9 @@
 import json
 import logging
 from datetime import datetime, timezone
-import websockets
 
-from common.metric_base import WebSocketMetric, MetricConfig, MetricLabels, MetricLabelKey
+from common.metric_types import WebSocketMetric
+from common.metric_config import MetricConfig, MetricLabels, MetricLabelKey
 
 
 
