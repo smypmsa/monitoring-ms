@@ -1,8 +1,8 @@
 x-default-logging: &default-logging
   driver: "json-file"
   options:
-    max-size: "300m"
-    max-file: '3'
+    max-size: "100m"
+    max-file: '10'
 
 networks:
   monitoring_network:
@@ -36,6 +36,18 @@ services:
     logging: *default-logging
     restart: always
 
+  ton-service:
+    build:
+      context: .
+      dockerfile: ton-service/Dockerfile
+    container_name: ton-service
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - monitoring_network
+    logging: *default-logging
+    restart: always
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -53,4 +65,5 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.config.file=/etc/prometheus/web.yml"
+      - "--storage.tsdb.retention.time=180d"
     restart: always

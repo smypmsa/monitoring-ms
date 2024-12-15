@@ -190,14 +190,12 @@ class BaseMetric(ABC):
         """Updates the latest value of the metric."""
         self.latest_value = value
         self.labels.update_label(MetricLabelKey.RESPONSE_STATUS, "success")
-        logging.info(self.get_prometheus_format())
+        logging.debug(self.get_prometheus_format())
 
     async def handle_error(self, error: Exception) -> None:
         """Handles errors by updating the status and retrying after a delay."""
         self.labels.update_label(MetricLabelKey.RESPONSE_STATUS, "failed")
         logging.error(f"Error in {self.labels.get_prometheus_labels()}: {str(error)}")
-        logging.debug(f"Retrying in {self.config.retry_interval} seconds...")
-        await asyncio.sleep(self.config.retry_interval)
 
 
 class WebSocketMetric(BaseMetric):
@@ -221,7 +219,7 @@ class WebSocketMetric(BaseMetric):
                 ping_timeout=self.config.timeout,
                 close_timeout=self.config.timeout
             )
-            logging.info(f"Connected to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
+            logging.debug(f"Connected to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
             return websocket
         
         except Exception as e:
@@ -265,7 +263,7 @@ class WebSocketMetric(BaseMetric):
                             if elapsed < (self.config.interval / 2):
                                 await self.unsubscribe(websocket)
                                 await websocket.close()
-                                logging.info(f"Unsubscribed and closed connection to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
+                                logging.debug(f"Unsubscribed and closed connection to {self.ws_endpoint} for {self.labels.get_label(MetricLabelKey.BLOCKCHAIN)}")
                                 await asyncio.sleep(self.config.interval - elapsed)
                                 break
 

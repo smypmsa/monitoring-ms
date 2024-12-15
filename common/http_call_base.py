@@ -1,13 +1,10 @@
 import time
 import aiohttp
-import logging
 
 from common.metric_base import HttpMetric, MetricLabels, MetricConfig, MetricLabelKey
 
 
 
-
-logging.basicConfig(level=logging.INFO)
 
 class HttpCallLatencyMetricBase(HttpMetric):
     """
@@ -36,34 +33,30 @@ class HttpCallLatencyMetricBase(HttpMetric):
         """
         Perform the HTTP request and return the response time for the specified method.
         """
-        try:
-            async with aiohttp.ClientSession() as session:
-                start_time = time.monotonic()
+        async with aiohttp.ClientSession() as session:
+            start_time = time.monotonic()
                 
-                request_data = {
-                    "id": 1,
-                    "jsonrpc": "2.0",
-                    "method": self.method,
-                }
-                if self.method_params:
-                    request_data["params"] = self.method_params
+            request_data = {
+                "id": 1,
+                "jsonrpc": "2.0",
+                "method": self.method,
+            }
+            if self.method_params:
+                request_data["params"] = self.method_params
 
-                async with session.post(
-                    self.http_endpoint,
-                    headers={"Accept": "application/json", "Content-Type": "application/json"},
-                    json=request_data,
-                    timeout=self.config.timeout
-                ) as response:
-                    if response.status == 200:
-                        await response.json()
-                        latency = time.monotonic() - start_time
-                        return latency
+            async with session.post(
+                self.http_endpoint,
+                headers={"Accept": "application/json", "Content-Type": "application/json"},
+                json=request_data,
+                timeout=self.config.timeout
+            ) as response:
+                if response.status == 200:
+                    await response.json()
+                    latency = time.monotonic() - start_time
+                    return latency
                     
-                    else:
-                        raise ValueError(f"Unexpected status code: {response.status}.")
+                else:
+                    raise ValueError(f"Unexpected status code: {response.status}.")
                     
-        except Exception as e:
-            raise
-
     def process_data(self, value):
         return value
