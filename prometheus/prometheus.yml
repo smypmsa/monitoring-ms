@@ -1,7 +1,0 @@
-global:
-  scrape_interval: 55s
-
-scrape_configs:
-  - job_name: 'all-services'
-    static_configs:
-      - targets: ['evm-service:8000', 'solana-service:8000', 'ton-service:8000']

@@ -9,7 +9,7 @@ from common.main_core import create_app
 
 registered_metrics = {
     "Solana": [
-        #(WsBlockLatencyMetric, "response_latency_seconds"),
+        # (WsBlockLatencyMetric, "response_latency_seconds"),
         (HttpGetRecentBlockhashLatencyMetric, "response_latency_seconds"),
         (HttpGetRecentSlotLatencyMetric, "response_latency_seconds"),
         (HttpSimulateTransactionLatencyMetric, "response_latency_seconds"),

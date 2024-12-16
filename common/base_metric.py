@@ -48,7 +48,7 @@ class BaseMetric(ABC):
     def get_all_latest_values(cls) -> List[str]:
         """Returns all latest values in Prometheus format."""
         return [
-            instance.get_prometheus_format()
+            instance.get_influx_format()
             for instance in cls._instances
             if instance.latest_value is not None
         ]
@@ -68,6 +68,22 @@ class BaseMetric(ABC):
         if self.latest_value is None:
             raise ValueError("Metric value is not set")
         return f"{self.metric_name}{{{self.labels.get_prometheus_labels()}}} {self.latest_value}"
+
+    def get_influx_format(self) -> str:
+        """Formats the metric in Influx line protocol."""
+        if self.latest_value is None:
+            raise ValueError("Metric value is not set")
+
+        # Construct tags from labels
+        # Example: metric_name,tag1=val1,tag2=val2 value=<latest_value>
+        tag_str = ",".join(
+            [f"{label.key.value}={label.value}" for label in self.labels.labels]
+        )
+
+        if tag_str:
+            return f"{self.metric_name},{tag_str} value={self.latest_value}"
+        else:
+            return f"{self.metric_name} value={self.latest_value}"
 
     async def update_metric_value(self, value: Union[int, float]) -> None:
         """Updates the latest value of the metric."""
